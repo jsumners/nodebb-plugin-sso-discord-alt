@@ -30,15 +30,8 @@ const async = module.parent.require('async')
 const authenticationController = module.parent.require('./controllers/authentication')
 
 const constants = Object.freeze({
-  type: '', // Either 'oauth' or 'oauth2'
+  type: 'oauth2',
   name: '', // Something unique to your OAuth provider in lowercase, like "github", or "nodebb"
-  oauth: {
-    requestTokenURL: '',
-    accessTokenURL: '',
-    userAuthorizationURL: '',
-    consumerKey: '',
-    consumerSecret: ''
-  },
   oauth2: {
     authorizationURL: '',
     tokenURL: '',
@@ -66,50 +59,26 @@ OAuth.getStrategy = function (strategies, callback) {
   if (configOk) {
     PassportOAuth = require('passport-oauth')[constants.type === 'oauth' ? 'OAuthStrategy' : 'OAuth2Strategy']
 
-    if (constants.type === 'oauth') {
-      // OAuth options
-      opts = constants.oauth
-      opts.callbackURL = nconf.get('url') + '/auth/' + constants.name + '/callback'
+    // OAuth 2 options
+    opts = constants.oauth2
+    opts.callbackURL = nconf.get('url') + '/auth/' + constants.name + '/callback'
 
-      PassportOAuth.Strategy.prototype.userProfile = function (token, secret, params, done) {
-        this._oauth.get(constants.userRoute, token, secret, function (err, body, res) {
-          if (err) { return done(new InternalOAuthError('failed to fetch user profile', err)) }
+    PassportOAuth.Strategy.prototype.userProfile = function (accessToken, done) {
+      this._oauth2.get(constants.userRoute, accessToken, function (err, body, res) {
+        if (err) { return done(new InternalOAuthError('failed to fetch user profile', err)) }
 
-          try {
-            const json = JSON.parse(body)
-            OAuth.parseUserReturn(json, function (err, profile) {
-              if (err) return done(err)
-              profile.provider = constants.name
+        try {
+          const json = JSON.parse(body)
+          OAuth.parseUserReturn(json, function (err, profile) {
+            if (err) return done(err)
+            profile.provider = constants.name
 
-              done(null, profile)
-            })
-          } catch (e) {
-            done(e)
-          }
-        })
-      }
-    } else if (constants.type === 'oauth2') {
-      // OAuth 2 options
-      opts = constants.oauth2
-      opts.callbackURL = nconf.get('url') + '/auth/' + constants.name + '/callback'
-
-      PassportOAuth.Strategy.prototype.userProfile = function (accessToken, done) {
-        this._oauth2.get(constants.userRoute, accessToken, function (err, body, res) {
-          if (err) { return done(new InternalOAuthError('failed to fetch user profile', err)) }
-
-          try {
-            const json = JSON.parse(body)
-            OAuth.parseUserReturn(json, function (err, profile) {
-              if (err) return done(err)
-              profile.provider = constants.name
-
-              done(null, profile)
-            })
-          } catch (e) {
-            done(e)
-          }
-        })
-      }
+            done(null, profile)
+          })
+        } catch (e) {
+          done(e)
+        }
+      })
     }
 
     opts.passReqToCallback = true
