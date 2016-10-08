@@ -15,21 +15,21 @@ a format accepted by NodeBB. Instructions are provided there. (Line 137)
 Step 4: If all goes well, you'll be able to login/register via your OAuth endpoint credentials.
 */
 
-var User = module.parent.require('./user')
-var Groups = module.parent.require('./groups')
-var InternalOAuthError = require('passport-oauth').InternalOAuthError
-// var meta = module.parent.require('./meta')
-var db = module.parent.require('../src/database')
-var passport = module.parent.require('passport')
-// var fs = module.parent.require('fs')
-// var path = module.parent.require('path')
-var nconf = module.parent.require('nconf')
-var winston = module.parent.require('winston')
-var async = module.parent.require('async')
+const User = module.parent.require('./user')
+const Groups = module.parent.require('./groups')
+const InternalOAuthError = require('passport-oauth').InternalOAuthError
+// const meta = module.parent.require('./meta')
+const db = module.parent.require('../src/database')
+const passport = module.parent.require('passport')
+// const fs = module.parent.require('fs')
+// const path = module.parent.require('path')
+const nconf = module.parent.require('nconf')
+const winston = module.parent.require('winston')
+const async = module.parent.require('async')
 
-var authenticationController = module.parent.require('./controllers/authentication')
+const authenticationController = module.parent.require('./controllers/authentication')
 
-var constants = Object.freeze({
+const constants = Object.freeze({
   type: '', // Either 'oauth' or 'oauth2'
   name: '', // Something unique to your OAuth provider in lowercase, like "github", or "nodebb"
   oauth: {
@@ -47,10 +47,10 @@ var constants = Object.freeze({
   },
   userRoute: '' // This is the address to your app's "user profile" API endpoint (expects JSON)
 })
-var configOk = false
-var OAuth = {}
-var PassportOAuth
-var opts
+let configOk = false
+let OAuth = {}
+let PassportOAuth
+let opts
 
 if (!constants.name) {
   winston.error('[sso-oauth] Please specify a name for your OAuth provider (library.js:32)')
@@ -76,7 +76,7 @@ OAuth.getStrategy = function (strategies, callback) {
           if (err) { return done(new InternalOAuthError('failed to fetch user profile', err)) }
 
           try {
-            var json = JSON.parse(body)
+            const json = JSON.parse(body)
             OAuth.parseUserReturn(json, function (err, profile) {
               if (err) return done(err)
               profile.provider = constants.name
@@ -98,7 +98,7 @@ OAuth.getStrategy = function (strategies, callback) {
           if (err) { return done(new InternalOAuthError('failed to fetch user profile', err)) }
 
           try {
-            var json = JSON.parse(body)
+            const json = JSON.parse(body)
             OAuth.parseUserReturn(json, function (err, profile) {
               if (err) return done(err)
               profile.provider = constants.name
@@ -152,7 +152,7 @@ OAuth.parseUserReturn = function (data, callback) {
   // Find out what is available by uncommenting this line:
   // console.log(data);
 
-  var profile = {}
+  const profile = {}
   profile.id = data.id
   profile.displayName = data.name
   profile.emails = [{ value: data.email }]
@@ -180,7 +180,7 @@ OAuth.login = function (payload, callback) {
       })
     } else {
       // New User
-      var success = function (uid) {
+      const success = function (uid) {
         // Save provider-specific information to the user
         User.setUserField(uid, constants.name + 'Id', payload.oAuthid)
         db.setObjectField(constants.name + 'Id:uid', payload.oAuthid, uid)
