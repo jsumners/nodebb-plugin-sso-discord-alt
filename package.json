@@ -1,7 +1,7 @@
 {
-  "name": "nodebb-plugin-sso-oauth",
-  "version": "0.3.1",
-  "description": "NodeBB Generic OAuth SSO",
+  "name": "nodebb-plugin-sso-discord",
+  "version": "0.1.0",
+  "description": "NodeBB Discord OAuth2 SSO",
   "main": "library.js",
   "repository": {
     "type": "git",
@@ -10,7 +10,6 @@
   "keywords": [
     "nodebb",
     "plugin",
-    "oauth",
     "oauth2",
     "sso",
     "single sign on",
