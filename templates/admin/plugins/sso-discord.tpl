@@ -1,19 +1,19 @@
 <div class="row">
   <div class="col-sm-2 col-xs-12 settings-header">Discord SSO</div>
   <div class="col-sm-10 col-xs-12">
-    <!--
     <div class="alert alert-info">
       <ol>
         <li>
-          Create a <strong>Google Application</strong> via the
-          <a href="https://code.google.com/apis/console/">API Console</a> and then paste
+          Create a <strong>Discord Application</strong> via the
+          <a href="https://discordapp.com/developers/applications/me">API Console</a> and then paste
           your application details here.
         </li>
-        <li>Ensure you have the "Google+ API" enabled in your API console settings.</li>
-        <li>The appropriate "Redirect URI" is your NodeBB's URL with `/auth/google/callback` appended to it.</li>
+        <li>
+          Ensure your application's redirect URI matches your NodeBB installation. For example, if your NodeBB lives at
+          https://nodebb.example.com/, then you'd supply 'https://nodebb.example.com/auth/discord/callback' as the URI.
+        </li>
       </ol>
     </div>
-    -->
     <form role="form" class="sso-discord-settings">
       <div class="form-group">
         <label for="discord_app_id">Client ID</label>
