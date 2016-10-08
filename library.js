@@ -1,8 +1,8 @@
 'use strict'
 
 /*
-Welcome to the SSO OAuth plugin! If you're inspecting this code, you're probably looking to
-hook up NodeBB with your existing OAuth endpoint.
+Welcome to the SSO DiscordAuth plugin! If you're inspecting this code, you're probably looking to
+hook up NodeBB with your existing DiscordAuth endpoint.
 
 Step 1: Fill in the "constants" section below with the requisite informaton. Either the "oauth"
 or "oauth2" section needs to be filled, depending on what you set "type" to.
@@ -12,7 +12,7 @@ Step 2: Give it a whirl. If you see the congrats message, you're doing well so f
 Step 3: Customise the `parseUserReturn` method to normalise your user route's data return into
 a format accepted by NodeBB. Instructions are provided there. (Line 137)
 
-Step 4: If all goes well, you'll be able to login/register via your OAuth endpoint credentials.
+Step 4: If all goes well, you'll be able to login/register via your DiscordAuth endpoint credentials.
 */
 
 const User = module.parent.require('./user')
@@ -31,7 +31,7 @@ const authenticationController = module.parent.require('./controllers/authentica
 
 const constants = Object.freeze({
   type: 'oauth2',
-  name: '', // Something unique to your OAuth provider in lowercase, like "github", or "nodebb"
+  name: '', // Something unique to your DiscordAuth provider in lowercase, like "github", or "nodebb"
   oauth2: {
     authorizationURL: '',
     tokenURL: '',
@@ -41,7 +41,7 @@ const constants = Object.freeze({
   userRoute: '' // This is the address to your app's "user profile" API endpoint (expects JSON)
 })
 let configOk = false
-let OAuth = {}
+let DiscordAuth = {}
 let PassportOAuth
 let opts
 
@@ -55,11 +55,11 @@ if (!constants.name) {
   configOk = true
 }
 
-OAuth.getStrategy = function (strategies, callback) {
+DiscordAuth.getStrategy = function (strategies, callback) {
   if (configOk) {
     PassportOAuth = require('passport-oauth')[constants.type === 'oauth' ? 'OAuthStrategy' : 'OAuth2Strategy']
 
-    // OAuth 2 options
+    // DiscordAuth 2 options
     opts = constants.oauth2
     opts.callbackURL = nconf.get('url') + '/auth/' + constants.name + '/callback'
 
@@ -69,7 +69,7 @@ OAuth.getStrategy = function (strategies, callback) {
 
         try {
           const json = JSON.parse(body)
-          OAuth.parseUserReturn(json, function (err, profile) {
+          DiscordAuth.parseUserReturn(json, function (err, profile) {
             if (err) return done(err)
             profile.provider = constants.name
 
@@ -84,7 +84,7 @@ OAuth.getStrategy = function (strategies, callback) {
     opts.passReqToCallback = true
 
     passport.use(constants.name, new PassportOAuth(opts, function (req, token, secret, profile, done) {
-      OAuth.login({
+      DiscordAuth.login({
         oAuthid: profile.id,
         handle: profile.displayName,
         email: profile.emails[0].value,
@@ -109,11 +109,11 @@ OAuth.getStrategy = function (strategies, callback) {
 
     callback(null, strategies)
   } else {
-    callback(new Error('OAuth Configuration is invalid'))
+    callback(new Error('DiscordAuth Configuration is invalid'))
   }
 }
 
-OAuth.parseUserReturn = function (data, callback) {
+DiscordAuth.parseUserReturn = function (data, callback) {
   // Alter this section to include whatever data is necessary
   // NodeBB *requires* the following: id, displayName, emails.
   // Everything else is optional.
@@ -136,8 +136,8 @@ OAuth.parseUserReturn = function (data, callback) {
   // callback(null, profile)
 }
 
-OAuth.login = function (payload, callback) {
-  OAuth.getUidByOAuthid(payload.oAuthid, function (err, uid) {
+DiscordAuth.login = function (payload, callback) {
+  DiscordAuth.getUidByOAuthid(payload.oAuthid, function (err, uid) {
     if (err) {
       return callback(err)
     }
@@ -192,7 +192,7 @@ OAuth.login = function (payload, callback) {
   })
 }
 
-OAuth.getUidByOAuthid = function (oAuthid, callback) {
+DiscordAuth.getUidByOAuthid = function (oAuthid, callback) {
   db.getObjectField(constants.name + 'Id:uid', oAuthid, function (err, uid) {
     if (err) {
       return callback(err)
@@ -201,7 +201,7 @@ OAuth.getUidByOAuthid = function (oAuthid, callback) {
   })
 }
 
-OAuth.deleteUserData = function (uid, callback) {
+DiscordAuth.deleteUserData = function (uid, callback) {
   async.waterfall([
     async.apply(User.getUserField, uid, constants.name + 'Id'),
     function (oAuthIdToDelete, next) {
@@ -216,4 +216,4 @@ OAuth.deleteUserData = function (uid, callback) {
   })
 }
 
-module.exports = OAuth
+module.exports = DiscordAuth
