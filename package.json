@@ -5,7 +5,7 @@
   "main": "library.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/julianlam/nodebb-plugin-sso-oauth"
+    "url": "https://github.com/jsumners/nodebb-plugin-sso-discord.git"
   },
   "keywords": [
     "nodebb",
@@ -20,9 +20,14 @@
     "name": "Julian Lam",
     "email": "julian@nodebb.org"
   },
+  "contributors": [{
+    "name": "Julian Lam",
+    "email": "julian@nodebb.org",
+    "url": "https://github.com/julianlam"
+  }],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/julianlam/nodebb-plugin-sso-oauth/issues"
+    "url": "https://github.com/jsumners/nodebb-plugin-sso-discord/issues"
   },
   "readme": "",
   "readmeFilename": "README.md",
@@ -37,7 +42,7 @@
     "quick-format": "^2.0.4"
   },
   "nbbpm": {
-    "compatibility": "^1.0.1",
+    "compatibility": "^1.2.1",
     "index": false
   },
   "devDependencies": {

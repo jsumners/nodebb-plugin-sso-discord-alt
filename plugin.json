@@ -2,7 +2,7 @@
   "id": "nodebb-plugin-sso-discord",
   "name": "NodeBB Discord SSO",
   "description": "NodeBB Plugin that allows users to login/register via Discord",
-  "url": "https://github.com/julianlam/nodebb-plugin-sso-oauth",
+  "url": "https://github.com/jsumners/nodebb-plugin-sso-discord",
   "library": "./library.js",
   "templates": "templates",
   "hooks": [
