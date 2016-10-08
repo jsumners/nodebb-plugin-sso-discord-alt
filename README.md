@@ -18,6 +18,11 @@ This plugin is based on the excellent skeleton at
 further based on the `nodebb-plugin-sso-google` by the same author. Without these plugins to learn from this one would
 not exist (at least not from me).
 
+I authored this plugin prior to learning that
+[https://github.com/NathanSMB/nodebb-plugin-sso-discord](https://github.com/NathanSMB/nodebb-plugin-sso-discord)
+exists. When I did a search for such a plugin via NodeBB's plugin search in the control panel I did not find one.
+I'm publishing this one regardless, because they differ in some respects. "Your mileage may vary."
+
 ## License
 
 [MIT License](http://jsumners.mit-license.org/)

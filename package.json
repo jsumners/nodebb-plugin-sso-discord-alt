@@ -1,11 +1,11 @@
 {
-  "name": "nodebb-plugin-sso-discord",
+  "name": "nodebb-plugin-sso-discord-alt",
   "version": "0.1.0",
   "description": "NodeBB Discord OAuth2 SSO",
   "main": "library.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jsumners/nodebb-plugin-sso-discord.git"
+    "url": "https://github.com/jsumners/nodebb-plugin-sso-discord-alt.git"
   },
   "keywords": [
     "nodebb",
@@ -17,8 +17,8 @@
     "registration"
   ],
   "author": {
-    "name": "Julian Lam",
-    "email": "julian@nodebb.org"
+    "name": "James Sumners",
+    "email": "james.sumners@gmail.com"
   },
   "contributors": [{
     "name": "Julian Lam",
@@ -27,7 +27,7 @@
   }],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jsumners/nodebb-plugin-sso-discord/issues"
+    "url": "https://github.com/jsumners/nodebb-plugin-sso-discord-alt/issues"
   },
   "readme": "",
   "readmeFilename": "README.md",
