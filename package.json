@@ -33,7 +33,8 @@
     "lint"
   ],
   "dependencies": {
-    "passport-oauth": "~1.0.0"
+    "passport-oauth": "~1.0.0",
+    "quick-format": "^2.0.4"
   },
   "nbbpm": {
     "compatibility": "^1.0.1",

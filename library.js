@@ -1,53 +1,47 @@
 'use strict'
 
-/*
-Welcome to the SSO DiscordAuth plugin! If you're inspecting this code, you're probably looking to
-hook up NodeBB with your existing DiscordAuth endpoint.
-
-Step 1: Fill in the "constants" section below with the requisite informaton. Either the "oauth"
-or "oauth2" section needs to be filled, depending on what you set "type" to.
-
-Step 2: Give it a whirl. If you see the congrats message, you're doing well so far!
-
-Step 3: Customise the `parseUserReturn` method to normalise your user route's data return into
-a format accepted by NodeBB. Instructions are provided there. (Line 137)
-
-Step 4: If all goes well, you'll be able to login/register via your DiscordAuth endpoint credentials.
-*/
-
 const User = module.parent.require('./user')
-const Groups = module.parent.require('./groups')
 const InternalOAuthError = require('passport-oauth').InternalOAuthError
-// const meta = module.parent.require('./meta')
+const OAuth2Strategy = require('passport-oauth').OAuth2Strategy
+const meta = module.parent.require('./meta')
 const db = module.parent.require('../src/database')
 const passport = module.parent.require('passport')
-// const fs = module.parent.require('fs')
-// const path = module.parent.require('path')
 const nconf = module.parent.require('nconf')
 const winston = module.parent.require('winston')
 const async = module.parent.require('async')
-
 const authenticationController = module.parent.require('./controllers/authentication')
+const quickFormat = require('quick-format')
 
-const constants = Object.freeze({
-  type: 'oauth2',
+function doLog () {
+  const args = Array.from(arguments)
+  const method = args.splice(0, 1)[0]
+  const formatStr = '[sso-discord] ' + args.splice(0, 1)[0]
+  method.call(winston, quickFormat([formatStr].concat(args)))
+}
+
+function log () {
+  doLog.apply(null, [winston.verbose].concat(Array.from(arguments)))
+}
+
+function logError () {
+  doLog.apply(null, [winston.error].concat(Array.from(arguments)))
+}
+
+const constants = {
   name: 'discord',
   admin: {
     route: '/plugins/sso-discord',
     icon: 'fa-pied-piper'
   },
-  oauth2: {
+  oauth: { // a passport-oauth2 options object
     authorizationURL: 'https://discordapp.com/api/oauth2/authorize',
     tokenURL: 'https://discordapp.com/api/oauth2/token',
-    clientID: 'filler',
-    clientSecret: 'filler'
+    passReqToCallback: true
   },
-  userRoute: '' // This is the address to your app's "user profile" API endpoint (expects JSON)
-})
-let configOk = true
-let DiscordAuth = {}
-let PassportOAuth
-let opts
+  userRoute: 'https://discordapp.com/api/users/@me'
+}
+
+const DiscordAuth = {}
 
 /**
  * Invoked by NodeBB when initializing the plugin.
@@ -56,6 +50,7 @@ let opts
  * @param {function} callback Invokec when initialization is complete.
  */
 DiscordAuth.init = function (data, callback) {
+  log('initializing')
   function render (req, res, next) {
     res.render('admin/plugins/sso-discord', {})
   }
@@ -67,6 +62,7 @@ DiscordAuth.init = function (data, callback) {
 }
 
 DiscordAuth.addMenuItem = function (customHeader, callback) {
+  log('adding admin menu item')
   customHeader.authentication.push({
     route: constants.admin.route,
     icon: constants.admin.icon,
@@ -77,24 +73,43 @@ DiscordAuth.addMenuItem = function (customHeader, callback) {
 }
 
 DiscordAuth.getStrategy = function (strategies, callback) {
-  if (configOk) {
-    PassportOAuth = require('passport-oauth')[constants.type === 'oauth' ? 'OAuthStrategy' : 'OAuth2Strategy']
+  log('adding authentication strategy')
+  const options = constants.oauth
+  options.callbackURL = nconf.get('url') + '/auth/' + constants.name + '/callback'
 
-    // DiscordAuth 2 options
-    opts = constants.oauth2
-    opts.callbackURL = nconf.get('url') + '/auth/' + constants.name + '/callback'
+  meta.settings.get('sso-discord', function (err, settings) {
+    if (err) return callback(err)
+    if (!settings.id || !settings.secret) {
+      return callback(new Error('invalid sso-discord configuration'))
+    }
 
-    PassportOAuth.Strategy.prototype.userProfile = function (accessToken, done) {
+    options.clientID = settings.id
+    options.clientSecret = settings.secret
+
+    function PassportOAuth () {
+      OAuth2Strategy.apply(this, arguments)
+    }
+    require('util').inherits(PassportOAuth, OAuth2Strategy)
+
+    /**
+     * Invoked by the OAuth2Strategy prior to the verify callback being invoked.
+     *
+     * @param {string} accessToken API access token as returned by the remote service.
+     * @param {function} done Callback to be invoked when profile parsing is finished.
+     */
+    PassportOAuth.prototype.userProfile = function (accessToken, done) {
+      log('getting user profile from remote service')
+      this._oauth2._useAuthorizationHeaderForGET = true
       this._oauth2.get(constants.userRoute, accessToken, function (err, body, res) {
-        if (err) { return done(new InternalOAuthError('failed to fetch user profile', err)) }
-
+        if (err) return done(new InternalOAuthError('failed to fetch user profile', err))
         try {
-          const json = JSON.parse(body)
-          DiscordAuth.parseUserReturn(json, function (err, profile) {
-            if (err) return done(err)
-            profile.provider = constants.name
-
-            done(null, profile)
+          log('parsing remote profile information')
+          const oauthUser = JSON.parse(body)
+          done(null, { // user profile for verify function
+            id: oauthUser.id,
+            displayName: oauthUser.username,
+            email: oauthUser.email,
+            provider: constants.name
           })
         } catch (e) {
           done(e)
@@ -102,138 +117,134 @@ DiscordAuth.getStrategy = function (strategies, callback) {
       })
     }
 
-    opts.passReqToCallback = true
-
-    passport.use(constants.name, new PassportOAuth(opts, function (req, token, secret, profile, done) {
-      DiscordAuth.login({
-        oAuthid: profile.id,
-        handle: profile.displayName,
-        email: profile.emails[0].value,
-        isAdmin: profile.isAdmin
-      }, function (err, user) {
-        if (err) {
-          return done(err)
-        }
-
+    const authenticator = new PassportOAuth(options, function verify (req, token, secret, profile, done) {
+      log('passport verify function invoked: %j', profile)
+      DiscordAuth.login(profile, function (err, user) {
+        if (err) return done(err)
         authenticationController.onSuccessfulLogin(req, user.uid)
         done(null, user)
       })
-    }))
+    })
+    passport.use(constants.name, authenticator)
 
     strategies.push({
       name: constants.name,
       url: '/auth/' + constants.name,
-      callbackURL: '/auth/' + constants.name + '/callback',
+      callbackURL: `/auth/${constants.name}/callback`,
       icon: constants.admin.icon,
-      scope: (constants.scope || '').split(',')
+      scope: ['identify', 'email']
     })
+    log('authentication strategy added')
 
     callback(null, strategies)
-  } else {
-    callback(new Error('DiscordAuth Configuration is invalid'))
-  }
+  })
 }
 
-DiscordAuth.parseUserReturn = function (data, callback) {
-  // Alter this section to include whatever data is necessary
-  // NodeBB *requires* the following: id, displayName, emails.
-  // Everything else is optional.
+DiscordAuth.getAssociation = function (data, callback) {
+  log('determining if user is associated with discord')
+  User.getUserField(data.uid, 'discordId', function (err, discordId) {
+    if (err) return callback(err, data)
 
-  // Find out what is available by uncommenting this line:
-  // console.log(data);
+    if (discordId) {
+      log('user is associated with discord')
+      data.associations.push({
+        associated: true,
+        url: 'https://discordapp.com/channels/@me',
+        name: constants.name,
+        icon: constants.admin.icon
+      })
+    } else {
+      log('user is not asscociated with discord')
+      data.associations.push({
+        associated: false,
+        url: nconf.get('url') + '/auth/discord',
+        name: constants.name,
+        icon: constants.admin.icon
+      })
+    }
 
-  const profile = {}
-  profile.id = data.id
-  profile.displayName = data.name
-  profile.emails = [{ value: data.email }]
-
-  // Do you want to automatically make somebody an admin? This line might help you do that...
-  // profile.isAdmin = data.isAdmin ? true : false;
-
-  // Delete or comment out the next TWO (2) lines when you are ready to proceed
-  process.stdout.write('===\nAt this point, you\'ll need to customise the above section to id, displayName, and emails into the "profile" object.\n===')
-  return callback(new Error('Congrats! So far so good -- please see server log for details'))
-
-  // callback(null, profile)
+    callback(null, data)
+  })
 }
 
-DiscordAuth.login = function (payload, callback) {
-  DiscordAuth.getUidByOAuthid(payload.oAuthid, function (err, uid) {
+DiscordAuth.login = function (profile, callback) {
+  log('login invoked: %j', profile)
+  DiscordAuth.getUidByOAuthid(profile.id, function (err, uid) {
     if (err) {
+      logError('could not determine uid from OAuthId: %s', profile.id)
       return callback(err)
     }
 
+    // Existing User
     if (uid !== null) {
-      // Existing User
-      callback(null, {
-        uid: uid
-      })
-    } else {
-      // New User
-      const success = function (uid) {
-        // Save provider-specific information to the user
-        User.setUserField(uid, constants.name + 'Id', payload.oAuthid)
-        db.setObjectField(constants.name + 'Id:uid', payload.oAuthid, uid)
+      log('user already exists: %s', uid)
+      return callback(null, {uid})
+    }
 
-        if (payload.isAdmin) {
-          Groups.join('administrators', uid, function (err) {
-            if (err) return callback(err)
-            callback(null, {
-              uid: uid
-            })
-          })
-        } else {
-          callback(null, {
-            uid: uid
-          })
-        }
+    // New User
+    log('determing if new user: %s', uid)
+    const success = function (uid) {
+      log('updating user record with remote service data: (%s, %s)', profile.id, uid)
+      // Save provider-specific information to the user
+      User.setUserField(uid, constants.name + 'Id', profile.id)
+      db.setObjectField(constants.name + 'Id:uid', profile.id, uid)
+      callback(null, {uid})
+    }
+
+    User.getUidByEmail(profile.email, function (err, uid) {
+      if (err) {
+        logError('could not lookup user by email %s: %s', profile.email, err.message)
+        return callback(err)
+      }
+      if (uid) {
+        log('user with email address already exists, merging: %s', profile.email)
+        // TODO: this seems easily exploitable
+        return success(uid)
       }
 
-      User.getUidByEmail(payload.email, function (err, uid) {
+      log('creating new user: %s', uid)
+      const userFields = {
+        username: profile.displayName,
+        email: profile.email
+      }
+      User.create(userFields, function (err, uid) {
         if (err) {
+          logError('could not create user %s: %s', uid, err.message)
           return callback(err)
         }
-
-        if (!uid) {
-          User.create({
-            username: payload.handle,
-            email: payload.email
-          }, function (err, uid) {
-            if (err) {
-              return callback(err)
-            }
-
-            success(uid)
-          })
-        } else {
-          success(uid) // Existing account -- merge
-        }
+        log('user created')
+        success(uid)
       })
-    }
+    })
   })
 }
 
 DiscordAuth.getUidByOAuthid = function (oAuthid, callback) {
   db.getObjectField(constants.name + 'Id:uid', oAuthid, function (err, uid) {
     if (err) {
+      logError('could not get object field from database %s: %s', oAuthid, err.message)
       return callback(err)
     }
     callback(null, uid)
   })
 }
 
-DiscordAuth.deleteUserData = function (uid, callback) {
-  async.waterfall([
-    async.apply(User.getUserField, uid, constants.name + 'Id'),
+DiscordAuth.deleteUserData = function (idObj, callback) {
+  log('deleteUserData invoked: %j', idObj)
+  const operations = [
+    async.apply(User.getUserField, idObj.uid, constants.name + 'Id'),
     function (oAuthIdToDelete, next) {
+      log('deleting oAuthId: %s', oAuthIdToDelete)
       db.deleteObjectField(constants.name + 'Id:uid', oAuthIdToDelete, next)
     }
-  ], function (err) {
+  ]
+  async.waterfall(operations, function (err) {
     if (err) {
-      winston.error('[sso-oauth] Could not remove OAuthId data for uid ' + uid + '. Error: ' + err)
+      logError('Could not remove OAuthId data for uid %j. Error: %s', idObj.uid, err.message)
       return callback(err)
     }
-    callback(null, uid)
+    log('finished deleting user: %s', idObj.uid)
+    callback(null, idObj.uid)
   })
 }
 
