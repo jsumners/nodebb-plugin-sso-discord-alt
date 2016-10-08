@@ -1,17 +1,23 @@
-# NodeBB OAuth SSO
+# NodeBB Discord OAuth2 SSO
 
-NodeBB Plugin that allows users to login/register via any configured OAuth provider. **Please note** that this is not a complete plugin, but merely a skeleton with which you can create your own OAuth SSO plugin for NodeBB (and hopefully share it with others!)
+This plugin for [NodeBB](https://github.com/NodeBB/NodeBB/) provides a way to register/authenticate users against
+[Discord](https://discordapp.com/). When enabled, and configured properly, there will be a
+[Pied Piper](http://fontawesome.io/icon/pied-piper/) icon available on the login screen. Click that icon to authenticate
+against Discord.
 
-## How to Adapt
+## Config
 
-1. Fork this plugin
-    * ![](http://i.imgur.com/APWHJsa.png)
-1. Add the OAuth credentials (around line 30 of `library.js`)
-1. Update profile information (around line 137 of `library.js`) with information from the user API call
-1. Activate this plugin from the plugins page
-1. Restart your NodeBB
-1. Let NodeBB take care of the rest
+1. Create an application -- https://discordapp.com/developers/applications/me
+2. Ensure the application's URI ends with `/auth/discord/callback`
+3. Fill in the id and secret for the application via the NodeBB admin control panel (under "Social Authentication")
 
-## Trouble?
+## Acknowledgements
 
-Find us on [the community forums](http://community.nodebb.org)!
+This plugin is based on the excellent skeleton at
+[https://github.com/julianlam/nodebb-plugin-sso-oauth](https://github.com/julianlam/nodebb-plugin-sso-oauth). It is
+further based on the `nodebb-plugin-sso-google` by the same author. Without these plugins to learn from this one would
+not exist (at least not from me).
+
+## License
+
+[MIT License](http://jsumners.mit-license.org/)
