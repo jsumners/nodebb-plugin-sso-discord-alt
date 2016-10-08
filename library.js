@@ -31,28 +31,49 @@ const authenticationController = module.parent.require('./controllers/authentica
 
 const constants = Object.freeze({
   type: 'oauth2',
-  name: '', // Something unique to your DiscordAuth provider in lowercase, like "github", or "nodebb"
+  name: 'discord',
+  admin: {
+    route: '/plugins/sso-discord',
+    icon: 'fa-pied-piper'
+  },
   oauth2: {
-    authorizationURL: '',
-    tokenURL: '',
-    clientID: '',
-    clientSecret: ''
+    authorizationURL: 'https://discordapp.com/api/oauth2/authorize',
+    tokenURL: 'https://discordapp.com/api/oauth2/token',
+    clientID: 'filler',
+    clientSecret: 'filler'
   },
   userRoute: '' // This is the address to your app's "user profile" API endpoint (expects JSON)
 })
-let configOk = false
+let configOk = true
 let DiscordAuth = {}
 let PassportOAuth
 let opts
 
-if (!constants.name) {
-  winston.error('[sso-oauth] Please specify a name for your OAuth provider (library.js:32)')
-} else if (!constants.type || (constants.type !== 'oauth' && constants.type !== 'oauth2')) {
-  winston.error('[sso-oauth] Please specify an OAuth strategy to utilise (library.js:31)')
-} else if (!constants.userRoute) {
-  winston.error('[sso-oauth] User Route required (library.js:31)')
-} else {
-  configOk = true
+/**
+ * Invoked by NodeBB when initializing the plugin.
+ *
+ * @param {object} data Provides some context information.
+ * @param {function} callback Invokec when initialization is complete.
+ */
+DiscordAuth.init = function (data, callback) {
+  function render (req, res, next) {
+    res.render('admin/plugins/sso-discord', {})
+  }
+
+  data.router.get('/admin/plugins/sso-discord', data.middleware.admin.buildHeader, render)
+  data.router.get('/api/admin/plugins/sso-discord', render)
+
+  callback()
+}
+
+DiscordAuth.addMenuItem = function (customHeader, callback) {
+  customHeader.authentication.push({
+    route: constants.admin.route,
+    icon: constants.admin.icon,
+    name: constants.name
+  })
+
+  callback(null, customHeader)
 }
 
 DiscordAuth.getStrategy = function (strategies, callback) {
@@ -103,7 +124,7 @@ DiscordAuth.getStrategy = function (strategies, callback) {
       name: constants.name,
       url: '/auth/' + constants.name,
       callbackURL: '/auth/' + constants.name + '/callback',
-      icon: 'fa-check-square',
+      icon: constants.admin.icon,
       scope: (constants.scope || '').split(',')
     })
 
