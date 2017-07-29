@@ -15,7 +15,7 @@ const quickFormat = require('quick-format')
 function doLog () {
   const args = Array.from(arguments)
   const method = args.splice(0, 1)[0]
-  const formatStr = '[sso-discord] ' + args.splice(0, 1)[0]
+  const formatStr = '[sso-discord-alt] ' + args.splice(0, 1)[0]
   method.call(winston, quickFormat([formatStr].concat(args)))
 }
 
@@ -27,10 +27,14 @@ function logError () {
   doLog.apply(null, [winston.error].concat(Array.from(arguments)))
 }
 
+function logWarn () {
+  doLog.apply(null, [winston.warn].concat(Array.from(arguments)))
+}
+
 const constants = {
   name: 'discord',
   admin: {
-    route: '/plugins/sso-discord',
+    route: '/plugins/sso-discord-alt',
     icon: 'fa-pied-piper'
   },
   oauth: { // a passport-oauth2 options object
@@ -52,11 +56,12 @@ const DiscordAuth = {}
 DiscordAuth.init = function (data, callback) {
   log('initializing')
   function render (req, res, next) {
-    res.render('admin/plugins/sso-discord', {})
+    log('rendering admin view')
+    res.render('admin/plugins/sso-discord-alt', {})
   }
 
-  data.router.get('/admin/plugins/sso-discord', data.middleware.admin.buildHeader, render)
-  data.router.get('/api/admin/plugins/sso-discord', render)
+  data.router.get('/admin/plugins/sso-discord-alt', data.middleware.admin.buildHeader, render)
+  data.router.get('/api/admin/plugins/sso-discord-alt', render)
 
   callback()
 }
@@ -77,10 +82,11 @@ DiscordAuth.getStrategy = function (strategies, callback) {
   const options = constants.oauth
   options.callbackURL = nconf.get('url') + '/auth/' + constants.name + '/callback'
 
-  meta.settings.get('sso-discord', function (err, settings) {
+  meta.settings.get('sso-discord-alt', function (err, settings) {
     if (err) return callback(err)
     if (!settings.id || !settings.secret) {
-      return callback(new Error('invalid sso-discord configuration'))
+      logWarn('Missing sso-discord-alt configuration. Not enabling authentication strategy.')
+      return callback(null, strategies)
     }
 
     options.clientID = settings.id

@@ -1,17 +1,17 @@
 /* global define, $, app, socket, require */
-define('admin/plugins/sso-discord', ['settings'], function (Settings) {
+define('admin/plugins/sso-discord-alt', ['settings'], function (Settings) {
   'use strict'
 
   var ACP = {}
 
   ACP.init = function () {
-    Settings.load('sso-discord', $('.sso-discord-settings'))
+    Settings.load('sso-discord-alt', $('.sso-discord-alt-settings'))
 
     $('#save').on('click', function () {
-      Settings.save('sso-discord', $('.sso-discord-settings'), function () {
+      Settings.save('sso-discord-alt', $('.sso-discord-alt-settings'), function () {
         app.alert({
           type: 'success',
-          alert_id: 'sso-discord-saved',
+          alert_id: 'sso-discord-alt-saved',
           title: 'Settings Saved',
           message: 'Please reload your NodeBB to apply these settings',
           clickfn: function () {

@@ -14,7 +14,7 @@
         </li>
       </ol>
     </div>
-    <form role="form" class="sso-discord-settings">
+    <form role="form" class="sso-discord-alt-settings">
       <div class="form-group">
         <label for="discord_app_id">Client ID</label>
         <input type="text" id="discord_app_id" name="id" title="Client ID" class="form-control input-lg" placeholder="Client ID">
