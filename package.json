@@ -20,11 +20,13 @@
     "name": "James Sumners",
     "email": "james.sumners@gmail.com"
   },
-  "contributors": [{
-    "name": "Julian Lam",
-    "email": "julian@nodebb.org",
-    "url": "https://github.com/julianlam"
-  }],
+  "contributors": [
+    {
+      "name": "Julian Lam",
+      "email": "julian@nodebb.org",
+      "url": "https://github.com/julianlam"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/jsumners/nodebb-plugin-sso-discord-alt/issues"
@@ -32,23 +34,22 @@
   "readme": "",
   "readmeFilename": "README.md",
   "scripts": {
-    "lint": "gulp lint"
+    "lint": "standard | snazzy"
   },
   "precommit": [
     "lint"
   ],
   "dependencies": {
     "passport-oauth": "~1.0.0",
-    "quick-format": "^2.0.4"
+    "quick-format": "^2.1.0"
   },
   "nbbpm": {
     "compatibility": "^1.2.1",
     "index": false
   },
   "devDependencies": {
-    "gulp": "^3.9.1",
-    "gulp-load-plugins": "^1.3.0",
-    "gulp-standard": "^8.0.2",
-    "pre-commit": "^1.1.3"
+    "pre-commit": "^1.2.2",
+    "snazzy": "^7.0.0",
+    "standard": "^10.0.2"
   }
 }
