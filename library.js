@@ -34,11 +34,11 @@ const constants = {
     icon: 'fa-pied-piper'
   },
   oauth: { // a passport-oauth2 options object
-    authorizationURL: 'https://discordapp.com/api/oauth2/authorize',
-    tokenURL: 'https://discordapp.com/api/oauth2/token',
+    authorizationURL: 'https://discordapp.com/api/v6/oauth2/authorize',
+    tokenURL: 'https://discordapp.com/api/v6/oauth2/token',
     passReqToCallback: true
   },
-  userRoute: 'https://discordapp.com/api/users/@me'
+  userRoute: 'https://discordapp.com/api/v6/users/@me'
 }
 
 const DiscordAuth = {}
