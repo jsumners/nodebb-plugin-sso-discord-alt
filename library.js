@@ -1,8 +1,8 @@
 'use strict'
 
 const User = module.parent.require('./user')
-const InternalOAuthError = require('passport-oauth').InternalOAuthError
-const OAuth2Strategy = require('passport-oauth').OAuth2Strategy
+const InternalOAuthError = module.parent.require('passport-oauth').InternalOAuthError
+const OAuth2Strategy = module.parent.require('passport-oauth').OAuth2Strategy
 const meta = module.parent.require('./meta')
 const db = module.parent.require('../src/database')
 const passport = module.parent.require('passport')
@@ -10,7 +10,7 @@ const nconf = module.parent.require('nconf')
 const winston = module.parent.require('winston')
 const async = module.parent.require('async')
 const authenticationController = module.parent.require('./controllers/authentication')
-const quickFormat = require('quick-format')
+const quickFormat = module.parent.require('quick-format')
 
 function doLog () {
   const args = Array.from(arguments)
@@ -115,6 +115,7 @@ DiscordAuth.getStrategy = function (strategies, callback) {
             id: oauthUser.id,
             displayName: oauthUser.username,
             email: oauthUser.email,
+			picture: 'https://cdn.discordapp.com/avatars/' + oauthUser.id + '/' + oauthUser.avatar + '.png',
             provider: constants.name
           })
         } catch (e) {
@@ -211,6 +212,7 @@ DiscordAuth.login = function (profile, callback) {
       log('creating new user: %s', uid)
       const userFields = {
         username: profile.displayName,
+		picture: profile.picture,
         email: profile.email
       }
       User.create(userFields, function (err, uid) {
