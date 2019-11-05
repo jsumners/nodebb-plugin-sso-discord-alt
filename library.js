@@ -1,15 +1,15 @@
 'use strict'
 
-const User = module.parent.require('./user')
+const User = require.main.require('./src/user')
 const InternalOAuthError = module.parent.require('passport-oauth').InternalOAuthError
-const OAuth2Strategy = module.parent.require('passport-oauth').OAuth2Strategy
-const meta = module.parent.require('./meta')
-const db = module.parent.require('../src/database')
+const OAuth2Strategy = require.main.require('passport-oauth').OAuth2Strategy
+const meta = require.main.require('./src/meta')
+const db = require.main.require('./src/database')
 const passport = module.parent.require('passport')
 const nconf = module.parent.require('nconf')
 const winston = module.parent.require('winston')
 const async = module.parent.require('async')
-const authenticationController = module.parent.require('./controllers/authentication')
+const authenticationController = require.main.require('./src/controllers/authentication')
 const quickFormat = module.parent.require('quick-format')
 
 function doLog () {
@@ -37,7 +37,7 @@ const constants = {
     route: '/plugins/sso-discord-alt',
     icon: 'fa-pied-piper'
   },
-  oauth: { // a passport-oauth2 options object
+    oauth: { // a passport-oauth2 options object
     authorizationURL: 'https://discordapp.com/api/v6/oauth2/authorize',
     tokenURL: 'https://discordapp.com/api/v6/oauth2/token',
     passReqToCallback: true
@@ -54,14 +54,34 @@ const DiscordAuth = {}
  * @param {function} callback Invokec when initialization is complete.
  */
 DiscordAuth.init = function (data, callback) {
-  log('initializing')
+  var hostHelpers = require.main.require('./src/routes/helpers');
+
   function render (req, res, next) {
-    log('rendering admin view')
-    res.render('admin/plugins/sso-discord-alt', {})
+    res.render('admin/plugins/sso-discord-alt', {
+		baseUrl: nconf.get('url'),
+	});
   }
 
-  data.router.get('/admin/plugins/sso-discord-alt', data.middleware.admin.buildHeader, render)
-  data.router.get('/api/admin/plugins/sso-discord-alt', render)
+  data.router.get('/admin/plugins/sso-discord-alt', data.middleware.admin.buildHeader, render);
+  data.router.get('/api/admin/plugins/sso-discord-alt', render);
+  
+  hostHelpers.setupPageRoute(data.router, '/deauth/discord', data.middleware, [data.middleware.requireUser], function (req, res) {
+			res.render('plugins/sso-discord-alt/deauth', {
+				service: "discord",
+			});
+		});
+		data.router.post('/deauth/discord', [data.middleware.requireUser, data.middleware.applyCSRF], function (req, res, next) {
+			DiscordAuth.deleteUserData({
+				uid: req.user.uid,
+			}, function (err) {
+				if (err) {
+					return next(err);
+				}
+
+				res.redirect(nconf.get('relative_path') + '/me/edit');
+			});
+		});
+  
 
   callback()
 }
@@ -115,7 +135,7 @@ DiscordAuth.getStrategy = function (strategies, callback) {
             id: oauthUser.id,
             displayName: oauthUser.username,
             email: oauthUser.email,
-			picture: 'https://cdn.discordapp.com/avatars/' + oauthUser.id + '/' + oauthUser.avatar + '.png',
+	    picture: 'https://cdn.discordapp.com/avatars/' + oauthUser.id + '/' + oauthUser.avatar + '.png',
             provider: constants.name
           })
         } catch (e) {
@@ -157,6 +177,7 @@ DiscordAuth.getAssociation = function (data, callback) {
       data.associations.push({
         associated: true,
         url: 'https://discordapp.com/channels/@me',
+		deauthUrl: nconf.get('url') + '/deauth/discord',
         name: constants.name,
         icon: constants.admin.icon
       })
@@ -195,6 +216,8 @@ DiscordAuth.login = function (profile, callback) {
       // Save provider-specific information to the user
       User.setUserField(uid, constants.name + 'Id', profile.id)
       db.setObjectField(constants.name + 'Id:uid', profile.id, uid)
+      User.setUserField(uid, 'uploadedpicture', profile.picture)
+      User.setUserField(uid, 'picture', profile.picture)
       callback(null, {uid})
     }
 
@@ -212,7 +235,8 @@ DiscordAuth.login = function (profile, callback) {
       log('creating new user: %s', uid)
       const userFields = {
         username: profile.displayName,
-		picture: profile.picture,
+	picture: profile.picture,
+        uploadedpicture: profile.picture,
         email: profile.email
       }
       User.create(userFields, function (err, uid) {
@@ -244,7 +268,10 @@ DiscordAuth.deleteUserData = function (idObj, callback) {
     function (oAuthIdToDelete, next) {
       log('deleting oAuthId: %s', oAuthIdToDelete)
       db.deleteObjectField(constants.name + 'Id:uid', oAuthIdToDelete, next)
-    }
+    },
+    function (next) {
+      db.deleteObjectField('user:' + idObj.uid, constants.name + 'Id', next)
+    },
   ]
   async.waterfall(operations, function (err) {
     if (err) {
