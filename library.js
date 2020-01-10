@@ -58,30 +58,31 @@ DiscordAuth.init = function (data, callback) {
 
   function render (req, res, next) {
     res.render('admin/plugins/sso-discord-alt', {
-		baseUrl: nconf.get('url'),
-	});
+        baseUrl: nconf.get('url'),
+    });
   }
 
   data.router.get('/admin/plugins/sso-discord-alt', data.middleware.admin.buildHeader, render);
   data.router.get('/api/admin/plugins/sso-discord-alt', render);
   
   hostHelpers.setupPageRoute(data.router, '/deauth/discord', data.middleware, [data.middleware.requireUser], function (req, res) {
-			res.render('plugins/sso-discord-alt/deauth', {
-				service: "discord",
-			});
-		});
-		data.router.post('/deauth/discord', [data.middleware.requireUser, data.middleware.applyCSRF], function (req, res, next) {
-			DiscordAuth.deleteUserData({
-				uid: req.user.uid,
-			}, function (err) {
-				if (err) {
-					return next(err);
-				}
+            res.render('plugins/sso-discord-alt/deauth', {
+                service: "discord",
+            });
+        });
+        data.router.post('/deauth/discord', [data.middleware.requireUser, data.middleware.applyCSRF], function (req, res, next) {
+            DiscordAuth.deleteUserData({
+                uid: req.user.uid,
+            }, function (err) {
+                if (err) {
+                    return next(err);
+                }
 
-				res.redirect(nconf.get('relative_path') + '/me/edit');
-			});
-		});
+                res.redirect(nconf.get('relative_path') + '/me/edit');
+            });
+        });
   
+
 
   callback()
 }
@@ -135,7 +136,7 @@ DiscordAuth.getStrategy = function (strategies, callback) {
             id: oauthUser.id,
             displayName: oauthUser.username,
             email: oauthUser.email,
-	    picture: 'https://cdn.discordapp.com/avatars/' + oauthUser.id + '/' + oauthUser.avatar + '.png',
+            picture: 'https://cdn.discordapp.com/avatars/' + oauthUser.id + '/' + oauthUser.avatar + '.png',
             provider: constants.name
           })
         } catch (e) {
@@ -177,7 +178,7 @@ DiscordAuth.getAssociation = function (data, callback) {
       data.associations.push({
         associated: true,
         url: 'https://discordapp.com/channels/@me',
-		deauthUrl: nconf.get('url') + '/deauth/discord',
+        deauthUrl: nconf.get('url') + '/deauth/discord',
         name: constants.name,
         icon: constants.admin.icon
       })
@@ -206,6 +207,9 @@ DiscordAuth.login = function (profile, callback) {
     // Existing User
     if (uid !== null) {
       log('user already exists: %s', uid)
+      User.setUserField(uid, 'username', profile.displayName)
+      User.setUserField(uid, 'uploadedpicture', profile.picture)
+      User.setUserField(uid, 'picture', profile.picture)
       return callback(null, {uid})
     }
 
@@ -216,6 +220,7 @@ DiscordAuth.login = function (profile, callback) {
       // Save provider-specific information to the user
       User.setUserField(uid, constants.name + 'Id', profile.id)
       db.setObjectField(constants.name + 'Id:uid', profile.id, uid)
+      User.setUserField(uid, 'username', profile.displayName)
       User.setUserField(uid, 'uploadedpicture', profile.picture)
       User.setUserField(uid, 'picture', profile.picture)
       callback(null, {uid})
@@ -235,7 +240,7 @@ DiscordAuth.login = function (profile, callback) {
       log('creating new user: %s', uid)
       const userFields = {
         username: profile.displayName,
-	picture: profile.picture,
+        picture: profile.picture,
         uploadedpicture: profile.picture,
         email: profile.email
       }
