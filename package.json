@@ -44,12 +44,12 @@
     "quick-format": "^2.1.0"
   },
   "nbbpm": {
-    "compatibility": "^1.5",
+    "compatibility": "^1.16",
     "index": false
   },
   "devDependencies": {
     "pre-commit": "^1.2.2",
-    "snazzy": "^7.0.0",
-    "standard": "^10.0.2"
+    "snazzy": "^9.0.0",
+    "standard": "^16.0.3"
   }
 }
