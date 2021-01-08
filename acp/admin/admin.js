@@ -1,8 +1,8 @@
-/* global define, $, app, socket, require */
+/* global define, $, app, socket */
 define('admin/plugins/sso-discord-alt', ['settings'], function (Settings) {
   'use strict'
 
-  var ACP = {}
+  const ACP = {}
 
   ACP.init = function () {
     Settings.load('sso-discord-alt', $('.sso-discord-alt-settings'))

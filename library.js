@@ -1,15 +1,15 @@
 'use strict'
 
-const User = module.parent.require('./user')
+const User = require.main.require('./src/user')
 const InternalOAuthError = require('passport-oauth').InternalOAuthError
 const OAuth2Strategy = require('passport-oauth').OAuth2Strategy
-const meta = module.parent.require('./meta')
-const db = module.parent.require('../src/database')
-const passport = module.parent.require('passport')
-const nconf = module.parent.require('nconf')
-const winston = module.parent.require('winston')
-const async = module.parent.require('async')
-const authenticationController = module.parent.require('./controllers/authentication')
+const meta = require.main.require('./src/meta')
+const db = require.main.require('./src/database')
+const passport = require.main.require('passport')
+const nconf = require.main.require('nconf')
+const winston = require.main.require('winston')
+const async = require.main.require('async')
+const authenticationController = require.main.require('./src/controllers/authentication')
 const quickFormat = require('quick-format')
 
 function doLog () {
@@ -38,11 +38,11 @@ const constants = {
     icon: 'fa-pied-piper'
   },
   oauth: { // a passport-oauth2 options object
-    authorizationURL: 'https://discordapp.com/api/v6/oauth2/authorize',
-    tokenURL: 'https://discordapp.com/api/v6/oauth2/token',
+    authorizationURL: 'https://discord.com/api/v8/oauth2/authorize',
+    tokenURL: 'https://discord.com/api/v8/oauth2/token',
     passReqToCallback: true
   },
-  userRoute: 'https://discordapp.com/api/v6/users/@me'
+  userRoute: 'https://discord.com/api/v8/users/@me'
 }
 
 const DiscordAuth = {}
@@ -55,6 +55,9 @@ const DiscordAuth = {}
  */
 DiscordAuth.init = function (data, callback) {
   log('initializing')
+
+  const hostHelpers = require.main.require('./src/routes/helpers')
+
   function render (req, res, next) {
     log('rendering admin view')
     res.render('admin/plugins/sso-discord-alt', {})
@@ -62,6 +65,21 @@ DiscordAuth.init = function (data, callback) {
 
   data.router.get('/admin/plugins/sso-discord-alt', data.middleware.admin.buildHeader, render)
   data.router.get('/api/admin/plugins/sso-discord-alt', render)
+
+  hostHelpers.setupPageRoute(data.router, `/deauth/${constants.name}`, data.middleware, [data.middleware.requireUser], function (_, res) {
+    res.render('plugins/sso-discord-alt/deauth', {
+      service: 'Discord'
+    })
+  })
+  data.router.post(`/deauth/${constants.name}`, [data.middleware.requireUser, data.middleware.applyCSRF], function (req, res, next) {
+    DiscordAuth.deleteUserData({ uid: req.user.uid }, function (err) {
+      if (err) {
+        return next(err)
+      }
+
+      res.redirect(nconf.get('relative_path') + '/me/edit')
+    })
+  })
 
   callback()
 }
@@ -125,10 +143,20 @@ DiscordAuth.getStrategy = function (strategies, callback) {
 
     const authenticator = new PassportOAuth(options, function verify (req, token, secret, profile, done) {
       log('passport verify function invoked: %j', profile)
+      if (req.user && req.user.uid && req.user.uid > 0) {
+        User.setUserField(req.user.uid, constants.name + 'Id', profile.id)
+        db.setObjectField(constants.name + 'Id:uid', profile.id, req.user.uid)
+
+        return authenticationController.onSuccessfulLogin(req, req.user.uid, function (err) {
+          done(err, !err ? req.user : null)
+        })
+      }
+
       DiscordAuth.login(profile, function (err, user) {
         if (err) return done(err)
-        authenticationController.onSuccessfulLogin(req, user.uid)
-        done(null, user)
+        authenticationController.onSuccessfulLogin(req, user.uid, function (err) {
+          done(err, !err ? user : null)
+        })
       })
     })
     passport.use(constants.name, authenticator)
@@ -148,7 +176,7 @@ DiscordAuth.getStrategy = function (strategies, callback) {
 
 DiscordAuth.getAssociation = function (data, callback) {
   log('determining if user is associated with discord')
-  User.getUserField(data.uid, 'discordId', function (err, discordId) {
+  User.getUserField(data.uid, constants.name + 'Id', function (err, discordId) {
     if (err) return callback(err, data)
 
     if (discordId) {
@@ -156,6 +184,7 @@ DiscordAuth.getAssociation = function (data, callback) {
       data.associations.push({
         associated: true,
         url: 'https://discordapp.com/channels/@me',
+        deauthUrl: `${nconf.get('url')}/deauth/${constants.name}`,
         name: constants.name,
         icon: constants.admin.icon
       })
@@ -163,7 +192,7 @@ DiscordAuth.getAssociation = function (data, callback) {
       log('user is not asscociated with discord')
       data.associations.push({
         associated: false,
-        url: nconf.get('url') + '/auth/discord',
+        url: `${nconf.get('url')}/auth/${constants.name}`,
         name: constants.name,
         icon: constants.admin.icon
       })
@@ -184,7 +213,7 @@ DiscordAuth.login = function (profile, callback) {
     // Existing User
     if (uid !== null) {
       log('user already exists: %s', uid)
-      return callback(null, {uid})
+      return callback(null, { uid })
     }
 
     // New User
@@ -194,7 +223,7 @@ DiscordAuth.login = function (profile, callback) {
       // Save provider-specific information to the user
       User.setUserField(uid, constants.name + 'Id', profile.id)
       db.setObjectField(constants.name + 'Id:uid', profile.id, uid)
-      callback(null, {uid})
+      callback(null, { uid })
     }
 
     User.getUidByEmail(profile.email, function (err, uid) {
@@ -242,6 +271,9 @@ DiscordAuth.deleteUserData = function (idObj, callback) {
     function (oAuthIdToDelete, next) {
       log('deleting oAuthId: %s', oAuthIdToDelete)
       db.deleteObjectField(constants.name + 'Id:uid', oAuthIdToDelete, next)
+    },
+    function (next) {
+      db.deleteObjectField('user:' + idObj.uid, constants.name + 'Id', next)
     }
   ]
   async.waterfall(operations, function (err) {
