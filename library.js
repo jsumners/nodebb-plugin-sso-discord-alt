@@ -131,6 +131,7 @@ DiscordAuth.getStrategy = function (strategies, callback) {
           const oauthUser = JSON.parse(body)
           done(null, { // user profile for verify function
             id: oauthUser.id,
+            avatar: `https://cdn.discordapp.com/avatars/${oauthUser.id}/${oauthUser.avatar}.png`,
             displayName: oauthUser.username,
             email: oauthUser.email,
             provider: constants.name
@@ -223,6 +224,12 @@ DiscordAuth.login = function (profile, callback) {
       // Save provider-specific information to the user
       User.setUserField(uid, constants.name + 'Id', profile.id)
       db.setObjectField(constants.name + 'Id:uid', profile.id, uid)
+
+      if (profile.avatar) {
+        User.setUserField(uid, 'uploadedpicture', profile.avatar)
+        User.setUserField(uid, 'picture', profile.avatar)
+      }
+
       callback(null, { uid })
     }
 
