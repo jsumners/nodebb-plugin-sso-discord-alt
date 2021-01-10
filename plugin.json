@@ -14,5 +14,11 @@
   ],
   "acpScripts": [
     "acp/admin/admin.js"
-  ]
+  ],
+	"scripts": [
+		"public/lib/login.js"
+	],
+  "staticDirs": {
+    "images": "public/images"
+  }
 }

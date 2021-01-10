@@ -216,6 +216,7 @@ pip-log.txt
 
 sftp-config.json
 node_modules/
+package-lock.json
 
 ### OSX template
 *.DS_Store
