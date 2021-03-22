@@ -33,6 +33,7 @@ function logWarn () {
 
 const constants = {
   name: 'discord',
+  displayName: 'Discord',
   admin: {
     route: '/plugins/sso-discord-alt',
     icon: 'fa-pied-piper'
@@ -89,7 +90,7 @@ DiscordAuth.addMenuItem = function (customHeader, callback) {
   customHeader.authentication.push({
     route: constants.admin.route,
     icon: constants.admin.icon,
-    name: constants.name
+    name: constants.displayName
   })
 
   callback(null, customHeader)
@@ -186,7 +187,7 @@ DiscordAuth.getAssociation = function (data, callback) {
         associated: true,
         url: 'https://discordapp.com/channels/@me',
         deauthUrl: `${nconf.get('url')}/deauth/${constants.name}`,
-        name: constants.name,
+        name: constants.displayName,
         icon: constants.admin.icon
       })
     } else {
@@ -194,7 +195,7 @@ DiscordAuth.getAssociation = function (data, callback) {
       data.associations.push({
         associated: false,
         url: `${nconf.get('url')}/auth/${constants.name}`,
-        name: constants.name,
+        name: constants.displayName,
         icon: constants.admin.icon
       })
     }
