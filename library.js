@@ -69,7 +69,7 @@ DiscordAuth.init = function (data, callback) {
 
   hostHelpers.setupPageRoute(data.router, `/deauth/${constants.name}`, data.middleware, [data.middleware.requireUser], function (_, res) {
     res.render('plugins/sso-discord-alt/deauth', {
-      service: 'Discord'
+      service: constants.displayName
     })
   })
   data.router.post(`/deauth/${constants.name}`, [data.middleware.requireUser, data.middleware.applyCSRF], function (req, res, next) {
