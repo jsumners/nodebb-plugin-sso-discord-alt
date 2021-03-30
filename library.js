@@ -103,13 +103,14 @@ DiscordAuth.getStrategy = function (strategies, callback) {
 
   meta.settings.get('sso-discord-alt', function (err, settings) {
     if (err) return callback(err)
-    if (!settings.id || !settings.secret) {
+
+    options.clientID = settings.id || process.env.SSO_DISCORD_CLIENT_ID || ''
+    options.clientSecret = settings.secret || process.env.SSO_DISCORD_CLIENT_SECRET || ''
+
+    if (!options.clientID || !options.clientSecret) {
       logWarn('Missing sso-discord-alt configuration. Not enabling authentication strategy.')
       return callback(null, strategies)
     }
-
-    options.clientID = settings.id
-    options.clientSecret = settings.secret
 
     function PassportOAuth () {
       OAuth2Strategy.apply(this, arguments)
