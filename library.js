@@ -186,7 +186,7 @@ DiscordAuth.getAssociation = function (data, callback) {
       log('user is associated with discord')
       data.associations.push({
         associated: true,
-        url: 'https://discordapp.com/channels/@me',
+        url: `https://discordapp.com/users/${discordId}`,
         deauthUrl: `${nconf.get('url')}/deauth/${constants.name}`,
         name: constants.displayName,
         icon: constants.admin.icon
