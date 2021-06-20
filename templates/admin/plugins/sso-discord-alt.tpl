@@ -12,6 +12,14 @@
           Ensure your application's redirect URI matches your NodeBB installation. For example, if your NodeBB lives at
           https://nodebb.example.com/, then you'd supply 'https://nodebb.example.com/auth/discord/callback' as the URI.
         </li>
+        <li>
+          You can configure this plugin via an <em>environment variables</em>. You can also specify values in the form below,
+          and those will be stored in the database.
+          <p>
+            <pre><code>export SSO_DISCORD_CLIENT_ID="xxxxx"
+export SSO_DISCORD_CLIENT_SECRET="yyyyy"</code></pre>
+          </p>
+        </li>
       </ol>
     </div>
     <form role="form" class="sso-discord-alt-settings">
