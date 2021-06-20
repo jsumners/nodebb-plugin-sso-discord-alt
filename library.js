@@ -133,7 +133,7 @@ DiscordAuth.getStrategy = function (strategies, callback) {
           const oauthUser = JSON.parse(body)
           done(null, { // user profile for verify function
             id: oauthUser.id,
-            avatar: `https://cdn.discordapp.com/avatars/${oauthUser.id}/${oauthUser.avatar}.png`,
+            avatar: oauthUser.avatar ? `https://cdn.discordapp.com/avatars/${oauthUser.id}/${oauthUser.avatar}.png` : null,
             displayName: oauthUser.username,
             email: oauthUser.email,
             provider: constants.name
