@@ -1,7 +1,7 @@
 # NodeBB Discord OAuth2 SSO
 
 This plugin for [NodeBB](https://github.com/NodeBB/NodeBB/) provides a way to register/authenticate users against [Discord](https://discord.com/). When enabled, and configured properly, there will be a
-[Discord icon](http://fontawesome.io/icon/discord/) available on the login screen. Click that icon to authenticate against Discord.
+[Discord icon](https://fontawesome.com/v6.0/icons/discord?s=brands) available on the login screen. Click that icon to authenticate against Discord.
 
 ## Config
 
