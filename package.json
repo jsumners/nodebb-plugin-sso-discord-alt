@@ -44,7 +44,7 @@
     "quick-format": "^2.1.0"
   },
   "nbbpm": {
-    "compatibility": "^1.16",
+    "compatibility": "^2.0",
     "index": false
   },
   "devDependencies": {

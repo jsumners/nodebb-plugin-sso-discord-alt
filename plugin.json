@@ -12,12 +12,10 @@
     { "hook": "filter:auth.init", "method": "getStrategy" },
     { "hook": "filter:admin.header.build", "method": "addMenuItem" }
   ],
-  "acpScripts": [
-    "acp/admin/admin.js"
-  ],
-	"scripts": [
-		"public/lib/login.js"
-	],
+  "modules": {
+    "../admin/plugins/sso-discord-alt.js": "acp/admin/admin.js",
+    "sso-discord-alt/login.js": "public/lib/login.js"
+  },
   "staticDirs": {
     "images": "public/images"
   }
