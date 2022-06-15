@@ -14,5 +14,8 @@
   ],
   "modules": {
     "../admin/plugins/sso-discord-alt.js": "acp/admin/admin.js"
-  }
+  },
+  "less": [
+    "public/styles/fa-brands.less"
+  ]
 }
