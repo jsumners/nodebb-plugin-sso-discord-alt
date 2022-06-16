@@ -36,7 +36,7 @@ const constants = {
   displayName: 'Discord',
   admin: {
     route: '/plugins/sso-discord-alt',
-    icon: 'fa-brands fa-discord fa-discord-icon'
+    icon: 'fab fa-discord'
   },
   oauth: { // a passport-oauth2 options object
     authorizationURL: 'https://discord.com/api/v8/oauth2/authorize',
