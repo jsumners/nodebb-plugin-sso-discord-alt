@@ -36,14 +36,14 @@ const constants = {
   displayName: 'Discord',
   admin: {
     route: '/plugins/sso-discord-alt',
-    icon: 'fa-discord'
+    icon: 'fab fa-discord'
   },
   oauth: { // a passport-oauth2 options object
-    authorizationURL: 'https://discord.com/api/v8/oauth2/authorize',
-    tokenURL: 'https://discord.com/api/v8/oauth2/token',
+    authorizationURL: 'https://discord.com/api/v10/oauth2/authorize',
+    tokenURL: 'https://discord.com/api/v10/oauth2/token',
     passReqToCallback: true
   },
-  userRoute: 'https://discord.com/api/v8/users/@me'
+  userRoute: 'https://discord.com/api/v10/users/@me'
 }
 
 const DiscordAuth = {}
